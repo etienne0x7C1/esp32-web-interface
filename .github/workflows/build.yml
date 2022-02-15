@@ -43,7 +43,7 @@ jobs:
           pwd && ls -la
       - name: install deps + additional packages
         run: |
-          yarn && ls -la
+          yarn
       - uses: actions/checkout@v2
         with:
           path: "src/modules/esp32-web-interface"
@@ -99,8 +99,8 @@ jobs:
       - name: include public resources
         run: |
           cd public/ 
-          #ln -s ../src/modules/three-resources/assets ./assets 
-          ls -la assets/
+          # ln -s ../src/modules/three-resources/assets ./assets 
+          # ls -la assets/
       - name: Build web app
         run: CI=false PUBLIC_URL=/ yarn build
       - name: Post build
