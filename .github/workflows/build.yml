@@ -59,7 +59,7 @@ jobs:
           echo $GITHUB_WORKSPACE/$SCRIPTS_DIR
           # node $GITHUB_WORKSPACE/$SCRIPTS_DIR/gen_git_commands.mjs $GITHUB_WORKSPACE/$MODULES_INDEX_FILE | sed 's/GIT/\$GIT/g' | sh 
           # complete modules index with current repo
-          echo "github.com/etienne1911/esp32-web-interface.git" >> $MODULES_INDEX_FILE
+          echo "github.com/etienne1911/esp32-web-interface.git" >> $GITHUB_WORKSPACE/$MODULES_INDEX_FILE
           pwd && ls -la
       - name: Generate gitmodules config file + finishSetup script
         run: |
