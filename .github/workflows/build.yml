@@ -53,10 +53,10 @@ jobs:
           GITLAB_PWD: ${{ secrets.GITLAB_TOKEN }}
         run: |
           # add foreigh modules
-          touch $MODULES_INDEX_FILE && ls -la src/modules/ && echo ' ' >> $MODULES_INDEX_FILE && cat $MODULES_INDEX_FILE
+          touch $MODULES_INDEX_FILE && echo " " >> $MODULES_INDEX_FILE && cat $MODULES_INDEX_FILE
           # echo "GITLAB_USR:GITLAB_PWD@gitlab.com/three-modules/three-core-modules.git" >> $MODULES_INDEX_FILE
           # echo "gitlab.com/three-modules/three-resources.git" >> $MODULES_INDEX_FILE
-          cd src/modules/
+          cd src/modules/ && ls -la
           echo $GITHUB_WORKSPACE/$SCRIPTS_DIR
           node $GITHUB_WORKSPACE/$SCRIPTS_DIR/gen_git_commands.mjs $GITHUB_WORKSPACE/$MODULES_INDEX_FILE | sed 's/GIT/\$GIT/g' | sh 
           # complete modules index with current repo
