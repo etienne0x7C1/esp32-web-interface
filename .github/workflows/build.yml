@@ -55,7 +55,7 @@ jobs:
           # clone foreign modules
           # echo "GITLAB_USR:GITLAB_PWD@gitlab.com/three-modules/three-core-modules.git" >> $MODULES_INDEX_FILE
           # echo "gitlab.com/three-modules/three-resources.git" >> $MODULES_INDEX_FILE
-          # echo "gitlab.com/three-modules/three-experiments.git" >> $MODULES_INDEX_FILE
+          echo "" >> $MODULES_INDEX_FILE
           cd src/modules/
           echo $GITHUB_WORKSPACE/$SCRIPTS_DIR
           node $GITHUB_WORKSPACE/$SCRIPTS_DIR/gen_git_commands.mjs $GITHUB_WORKSPACE/$MODULES_INDEX_FILE | sed 's/GIT/\$GIT/g' | sh 
@@ -63,7 +63,7 @@ jobs:
       - name: Complete modules index and Generate gitmodules config file + finishSetup script
         run: |
           # add remaining modules to the index
-          echo "github.com/etienne1911/forknite.git" >> $MODULES_INDEX_FILE
+          echo "github.com/etienne1911/esp32-web-interface.git" >> $MODULES_INDEX_FILE
           echo "github.com/etienne1911/pwa-tools.git" >> $MODULES_INDEX_FILE
           # generate file
           node $SCRIPTS_DIR/gen_gitmodules.mjs $MODULES_INDEX_FILE >> .gitmodules
