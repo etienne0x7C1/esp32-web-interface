@@ -52,6 +52,8 @@ jobs:
           GITLAB_USR: ${{ secrets.GITLAB_USER }}
           GITLAB_PWD: ${{ secrets.GITLAB_TOKEN }}
         run: |
+          # backup modules folder for later
+          cp -r src/modules/ backup/ 
           # add foreigh modules
           # echo "GITLAB_USR:GITLAB_PWD@gitlab.com/three-modules/three-core-modules.git" >> $MODULES_INDEX_FILE
           # echo "gitlab.com/three-modules/three-resources.git" >> $MODULES_INDEX_FILE
@@ -61,15 +63,13 @@ jobs:
           # complete modules index with current repo
           echo "github.com/etienne1911/esp32-web-interface.git" >> $GITHUB_WORKSPACE/$MODULES_INDEX_FILE
           pwd && ls -la
-      - name: Generate gitmodules config file + finishSetup script
+      - name: Generate gitmodules config file
         run: |
           # generate gitmodules file
           node $SCRIPTS_DIR/gen_gitmodules.mjs $MODULES_INDEX_FILE >> .gitmodules
           cat .gitmodules
-          # keep module index file and backup mandatory script
-          mkdir backup
+          # backup modules index
           mv $MODULES_INDEX_FILE backup/
-          cp $SCRIPTS_DIR/gen_git_commands.mjs backup/
       - name: Patch/customize cra files #requires node package installed + scripts from pwa-tools rep
         env:
           JSON_PATCHER: "./src/modules/pwa-tools/scripts/json_cfg_patcher.mjs"
