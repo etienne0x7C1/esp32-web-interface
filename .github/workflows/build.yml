@@ -95,6 +95,7 @@ jobs:
           cp src/modules/pwa-tools/patches/404.html public/
       - name: include public resources
         run: |
+          pwd && ls -R src/modules/
           cd public/ 
           # ln -s ../src/modules/three-resources/assets ./assets 
           # ls -la assets/
