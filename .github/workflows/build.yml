@@ -33,7 +33,7 @@ jobs:
       - name: Retrieve PWA workspace artifact
         env:
           PWA_ARTIFACT_URL: 'https://github.com/etienne1911/pwa-tools/releases/download'
-          PWA_ARTIFACT_REL: 'r2'
+          PWA_ARTIFACT_REL: 'r3'
           PWA_ARTIFACT_NAME: 'pwa-workspace-artifact'
         run: |
           wget $PWA_ARTIFACT_URL/$PWA_ARTIFACT_REL/$PWA_ARTIFACT_NAME.zip
