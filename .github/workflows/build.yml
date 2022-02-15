@@ -53,7 +53,7 @@ jobs:
           GITLAB_PWD: ${{ secrets.GITLAB_TOKEN }}
         run: |
           # add foreigh modules
-          touch $MODULES_INDEX_FILE
+          touch $MODULES_INDEX_FILE && ls -la && echo ' ' >> $MODULES_INDEX_FILE && cat $MODULES_INDEX_FILE
           # echo "GITLAB_USR:GITLAB_PWD@gitlab.com/three-modules/three-core-modules.git" >> $MODULES_INDEX_FILE
           # echo "gitlab.com/three-modules/three-resources.git" >> $MODULES_INDEX_FILE
           cd src/modules/
