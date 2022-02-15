@@ -14,58 +14,45 @@ const App = () => {
     console.log(BASENAME)
     return (
         <BrowserRouter basename={BASENAME}>
-            <Routes >
-                <Route path={"/*"} element={<Entries />} />
-                {/* <AppRoutes style={{ position: "absolute" }}>
+            <div className="App">
+                <NavBar />
+                <Routes >
+                    <Route index element={<Dashboard />} />
+                    {/* <Route path={"/*"} element={<Entries />} /> */}
+                </Routes>
+                <AppRoutes style={{ position: "absolute" }}>
+                    <Monitor customRouteName={'monitor'} />
                     <Wrapper customRouteName={'update'} />
-                    <Monitor />
-                </AppRoutes> */}
-                {/* <Route path="/monitor" element={<Monitor customRouteName={'monitor'} />} /> */}
-            </Routes>
+                </AppRoutes>
+            </div>
         </BrowserRouter>
     );
 }
 
-/**
- * Apps entries index 
- */
-const Entries = () => {
-    return (
-        <div className="App">
-            <NavBar />
-            <AppRoutes /*index={<Dashboard />}*/ style={{ position: "absolute" }}>
-                <Wrapper customRouteName={'update'} />
-                <Monitor customRouteName={'monitor'} />
-            </AppRoutes>
-        </div>
-    )
-}
-
-const Wrapper = ({ customRouteName }) => {
-    return (<></>)
-}
+// const Entries = () => {
+//     return (<AppRoutes /*index={<Dashboard />}*/ style={{ position: "absolute" }}>
+//         <Monitor customRouteName={'monitor'} />
+//         <Wrapper customRouteName={'update'} />
+//     </AppRoutes>)
+// }
 
 const Dashboard = ({ ...props }) => {
     return (
         <>
-            {/* <header className="App-header App-header-cust"> */}
-            <h1 style={{ textAlign: "center" }}> DASHBOARD </h1>
-            {/* <div className="App-items"> */}
-            {/* <RouteLinks elements={children} /> */}
-            {/* </div> */}
+            <h1 style={{ textAlign: "center" }}> ESP32 Interface </h1>
             <BuildNum />
-            {/* </header> */}
         </>
     )
 }
 
 export const Monitor = ({ customRouteName }) => {
+    return (<>
+        {/* <h1 style={{ textAlign: "center" }}> Monitor </h1> */}
+    </>);
+}
 
-    return (
-        <div className="App">
-
-        </div>
-    );
+const Wrapper = ({ customRouteName }) => {
+    return (<></>)
 }
 
 export default App
