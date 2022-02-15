@@ -1,0 +1,115 @@
+name: Generate Workspace
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ build-conf ]
+  pull_request:
+    branches: [ build-conf ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # generate workspace artifact
+  build:
+    name: Generate workspace
+    # The type of runner that the job will run on
+    runs-on: ubuntu-20.04
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    env:
+      MODULE_NAME: esp32-web-interface
+      MODULES_INDEX_FILE: src/modules/modules_index
+      SCRIPTS_DIR: src/modules/pwa-tools/scripts/
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Retrieve PWA workspace artifact
+        env:
+          PWA_ARTIFACT_URL: 'https://github.com/etienne1911/pwa-tools/releases/download'
+          PWA_ARTIFACT_REL: 'r3'
+          PWA_ARTIFACT_NAME: 'pwa-workspace-artifact'
+        run: |
+          wget $PWA_ARTIFACT_URL/$PWA_ARTIFACT_REL/$PWA_ARTIFACT_NAME.zip
+          echo 'workspace artifact retrieved'
+          unzip ${PWA_ARTIFACT_NAME}.zip
+          echo 'done extracting workspace artifact'
+          pwd && ls -la
+      - name: install deps + additional packages
+        run: |
+          yarn
+      - uses: actions/checkout@v2
+        with:
+          path: "src/modules/esp32-web-interface"
+      - name: Set modules index & clone foreign modules
+        env:
+          GITLAB_USR: ${{ secrets.GITLAB_USER }}
+          GITLAB_PWD: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          # backup modules folder for later
+          cp -r src/modules/ backup/ 
+          # add foreigh modules
+          # echo "GITLAB_USR:GITLAB_PWD@gitlab.com/three-modules/three-core-modules.git" >> $MODULES_INDEX_FILE
+          # echo "gitlab.com/three-modules/three-resources.git" >> $MODULES_INDEX_FILE
+          cd src/modules/
+          echo $GITHUB_WORKSPACE/$SCRIPTS_DIR
+          # node $GITHUB_WORKSPACE/$SCRIPTS_DIR/gen_git_commands.mjs $GITHUB_WORKSPACE/$MODULES_INDEX_FILE | sed 's/GIT/\$GIT/g' | sh 
+          # complete modules index with current repo
+          echo "github.com/etienne1911/esp32-web-interface.git" >> $GITHUB_WORKSPACE/$MODULES_INDEX_FILE
+          pwd && ls -la
+      - name: Generate gitmodules config file
+        run: |
+          # generate gitmodules file
+          node $SCRIPTS_DIR/gen_gitmodules.mjs $MODULES_INDEX_FILE >> .gitmodules
+          cat .gitmodules
+          # backup modules index
+          mv $MODULES_INDEX_FILE backup/
+      - name: Patch/customize cra files #requires node package installed + scripts from pwa-tools rep
+        env:
+          JSON_PATCHER: "./src/modules/pwa-tools/scripts/json_cfg_patcher.mjs"
+          TSCONF_PATCH: '{"compilerOptions":{"target":"es2015","strict":false}}'
+          MANIFEST_PATCH: '{"short_name":"ESP32-Interface","name":"ESP32 Web Interface", "display": "fullscreen", "description":"Web interface for ESP32 boards","start_url":"/"}'
+          PACKAGE_PATCH: '{"scripts":{"setup-finish":"cd src/modules && node gen_git_commands.mjs modules_index | sh"}}'
+          VIEWPORT_LINE: '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />'
+          TITLE_LINE: '<title>ESP32 Interface</title>'
+          HTML_PATCH_FILE: 'src/modules/pwa-tools/patches/gh-pages_spa-fix.patch'
+          #HTML_PATCH_CONTENT: $(cat $HTML_PATCH_FILE)
+        run: |
+          node --experimental-json-modules $JSON_PATCHER ./tsconfig.json "${TSCONF_PATCH}" > temp.json
+          mv temp.json tsconfig.json
+          node --experimental-json-modules $JSON_PATCHER ./public/manifest.json "${MANIFEST_PATCH}" > temp.json
+          mv temp.json ./public/manifest.json
+          node --experimental-json-modules $JSON_PATCHER ./package.json "${PACKAGE_PATCH}" > temp.json
+          mv temp.json ./package.json
+          sed -i "s/.\/App/.\/modules\/${MODULE_NAME}\//" src/index.tsx 
+          sed -i "/viewport/c${VIEWPORT_LINE}" public/index.html
+          cat ./tsconfig.json && cat ./src/index.tsx && cat ./public/manifest.json && cat public/index.html
+          sed -i "/\/title/c${TITLE_LINE}" public/index.html
+          export HTML_PATCH_CONTENT=$(cat $HTML_PATCH_FILE) && echo $HTML_PATCH_CONTENT
+          sed -i "/\/head/i${HTML_PATCH_CONTENT}" public/index.html
+          cp src/modules/pwa-tools/patches/404.html public/
+      - name: include public resources
+        run: |
+          pwd && ls -R src/modules/
+          cd public/ 
+          # ln -s ../src/modules/three-resources/assets ./assets 
+          # ls -la assets/
+      - name: Build web app
+        run: CI=false PUBLIC_URL=/ yarn build
+      - name: Post build
+        run: rm -rf src/modules && mv backup/ src/modules
+      - name: Workspace artefact
+        uses: actions/upload-artifact@v2
+        with:
+          name: esp32interface-workspace-artifact
+          path: |
+            .
+            !./node_modules/
+            !./build/
+            # !./src/modules/*/
