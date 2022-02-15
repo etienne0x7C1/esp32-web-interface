@@ -1,6 +1,4 @@
-# This is a basic workflow to help you get started with Actions
-
-name: CI
+name: Generate Workspace
 
 # Controls when the workflow will run
 on:
@@ -15,22 +13,102 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+  # generate workspace artifact
   build:
+    name: Generate workspace
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-20.04
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    env:
+      MODULE_NAME: esp32-web-interface
+      MODULES_INDEX_FILE: src/modules/modules_index
+      SCRIPTS_DIR: src/modules/pwa-tools/scripts/
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Retrieve PWA workspace artifact
+        env:
+          PWA_ARTIFACT_URL: 'https://github.com/etienne1911/pwa-tools/releases/download'
+          PWA_ARTIFACT_REL: 'r2'
+          PWA_ARTIFACT_NAME: 'pwa-workspace-artifact'
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          wget $PWA_ARTIFACT_URL/$PWA_ARTIFACT_REL/$PWA_ARTIFACT_NAME.zip
+          unzip ${PWA_ARTIFACT_NAME}.zip -d $PROJECT_NAME
+          pwd && ls -la &&
+      - name: install deps + additional packages
+        run: |
+          yarn && ls -la
+      - uses: actions/checkout@v2
+        with:
+          path: "src/modules/esp32-web-interface"
+      - name: Include foreign modules
+        env:
+          GITLAB_USR: ${{ secrets.GITLAB_USER }}
+          GITLAB_PWD: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          # clone foreign modules
+          # echo "GITLAB_USR:GITLAB_PWD@gitlab.com/three-modules/three-core-modules.git" >> $MODULES_INDEX_FILE
+          # echo "gitlab.com/three-modules/three-resources.git" >> $MODULES_INDEX_FILE
+          # echo "gitlab.com/three-modules/three-experiments.git" >> $MODULES_INDEX_FILE
+          cd src/modules/
+          echo $GITHUB_WORKSPACE/$SCRIPTS_DIR
+          node $GITHUB_WORKSPACE/$SCRIPTS_DIR/gen_git_commands.mjs $GITHUB_WORKSPACE/$MODULES_INDEX_FILE | sed 's/GIT/\$GIT/g' | sh 
+          pwd && ls -la
+      - name: Complete modules index and Generate gitmodules config file + finishSetup script
+        run: |
+          # add remaining modules to the index
+          echo "github.com/etienne1911/forknite.git" >> $MODULES_INDEX_FILE
+          echo "github.com/etienne1911/pwa-tools.git" >> $MODULES_INDEX_FILE
+          # generate file
+          node $SCRIPTS_DIR/gen_gitmodules.mjs $MODULES_INDEX_FILE >> .gitmodules
+          cat .gitmodules
+          # keep module index file and backup mandatory script
+          mkdir backup
+          mv $MODULES_INDEX_FILE backup/
+          cp $SCRIPTS_DIR/gen_git_commands.mjs backup/
+      - name: Patch/customize cra files #requires node package installed + scripts from pwa-tools rep
+        env:
+          JSON_PATCHER: "./src/modules/pwa-tools/scripts/json_cfg_patcher.mjs"
+          TSCONF_PATCH: '{"compilerOptions":{"target":"es2015","strict":false}}'
+          MANIFEST_PATCH: '{"short_name":"ESP32-Interface","name":"ESP32 Web Interface", "display": "fullscreen", "description":"Web interface for ESP32 boards","start_url":"/"}'
+          PACKAGE_PATCH: '{"scripts":{"setup-finish":"cd src/modules && node gen_git_commands.mjs modules_index | sh"}}'
+          VIEWPORT_LINE: '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />'
+          TITLE_LINE: '<title>ESP32 Interface</title>'
+          HTML_PATCH_FILE: 'src/modules/pwa-tools/patches/gh-pages_spa-fix.patch'
+          #HTML_PATCH_CONTENT: $(cat $HTML_PATCH_FILE)
+        run: |
+          node --experimental-json-modules $JSON_PATCHER ./tsconfig.json "${TSCONF_PATCH}" > temp.json
+          mv temp.json tsconfig.json
+          node --experimental-json-modules $JSON_PATCHER ./public/manifest.json "${MANIFEST_PATCH}" > temp.json
+          mv temp.json ./public/manifest.json
+          node --experimental-json-modules $JSON_PATCHER ./package.json "${PACKAGE_PATCH}" > temp.json
+          mv temp.json ./package.json
+          sed -i "s/.\/App/.\/modules\/${MODULE_NAME}\//" src/index.tsx 
+          sed -i "/viewport/c${VIEWPORT_LINE}" public/index.html
+          cat ./tsconfig.json && cat ./src/index.tsx && cat ./public/manifest.json && cat public/index.html
+          sed -i "/\/title/c${TITLE_LINE}" public/index.html
+          export HTML_PATCH_CONTENT=$(cat $HTML_PATCH_FILE) && echo $HTML_PATCH_CONTENT
+          sed -i "/\/head/i${HTML_PATCH_CONTENT}" public/index.html
+          cp src/modules/pwa-tools/patches/404.html public/
+      - name: include public resources
+        run: |
+          cd public/ 
+          #ln -s ../src/modules/three-resources/assets ./assets 
+          ls -la assets/
+      - name: Build web app
+        run: CI=false PUBLIC_URL=/ yarn build
+      - name: Post build
+        run: rm -rf src/modules && mv backup/ src/modules
+      - name: Workspace artefact
+        uses: actions/upload-artifact@v2
+        with:
+          name: esp32interface-workspace-artifact
+          path: |
+            .
+            !./node_modules/
+            !./build/
+            # !./src/modules/*/
