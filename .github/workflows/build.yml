@@ -38,9 +38,9 @@ jobs:
         run: |
           wget $PWA_ARTIFACT_URL/$PWA_ARTIFACT_REL/$PWA_ARTIFACT_NAME.zip
           echo 'workspace artifact retrieved'
-          unzip ${PWA_ARTIFACT_NAME}.zip -d $PWA_ARTIFACT_NAME
+          unzip ${PWA_ARTIFACT_NAME}.zip #-d $PWA_ARTIFACT_NAME
           echo 'done extracting workspace artifact'
-          pwd && ls -la &&
+          pwd && ls -la
       - name: install deps + additional packages
         run: |
           yarn && ls -la
