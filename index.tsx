@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { AppRoutes, RouteLinks } from "../pwa-tools/utils/routing"
 import { BuildNum, NavBar } from '../pwa-tools/UI/elements';
 import { isMobile } from '../pwa-tools/utils/misc';
 // import "../../App.css"
 import "../pwa-tools/pwa.css"
+import { StatusMonitor } from './StatusMonitor';
+import { RovControlInterface } from './RovControl';
+import { WebSocketClientService } from './WSClientService';
 // import "./styles.css"
 
 export const BASENAME = process.env.PUBLIC_URL ? process.env.PUBLIC_URL + "/" : ""
@@ -12,6 +15,11 @@ export const BASENAME = process.env.PUBLIC_URL ? process.env.PUBLIC_URL + "/" : 
 // Entry point
 const App = () => {
     console.log(BASENAME)
+
+    useEffect(() => {
+        WebSocketClientService.init()
+    })
+
     return (
         <BrowserRouter basename={BASENAME}>
             <div className="App">
@@ -21,7 +29,8 @@ const App = () => {
                     {/* <Route path={"/*"} element={<Entries />} /> */}
                 </Routes>
                 <AppRoutes style={{ position: "absolute" }}>
-                    <Monitor customRouteName={'monitor'} />
+                    <StatusMonitor customRouteName={'monitor'} />
+                    <RovControlInterface customRouteName={'rovcontrol'} />
                     <Wrapper customRouteName={'update'} />
                 </AppRoutes>
             </div>
@@ -43,12 +52,6 @@ const Dashboard = ({ ...props }) => {
             <BuildNum />
         </>
     )
-}
-
-export const Monitor = ({ customRouteName }) => {
-    return (<>
-        {/* <h1 style={{ textAlign: "center" }}> Monitor </h1> */}
-    </>);
 }
 
 const Wrapper = ({ customRouteName }) => {
