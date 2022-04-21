@@ -41,6 +41,7 @@ export class WebSocketClientService {
     //   console.log(event.data);
     WebSocketClientService.msgData = evt.data;
     WebSocketClientService.msgCount++;
+    console.log(this.msgData);
   }
 
   /**
@@ -48,8 +49,7 @@ export class WebSocketClientService {
    */
   static sendData(data, service?) {
     data.service = service ? service : data.service
-    console.log(`send data to service ${data.service}`, data)
-    console.log(data)
+    // console.log(`send data to ${data.service} service`, data)
     const msg = JSON.stringify(data);
     try {
       WebSocketClientService.ws.send(msg); //send msg to the server
