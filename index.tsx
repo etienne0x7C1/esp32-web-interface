@@ -5,7 +5,7 @@ import { BuildNum, StatusBar } from '../pwa-tools/UI/statusBar';
 import { isMobile } from '../pwa-tools/utils/misc';
 // import "../../App.css"
 import "../pwa-tools/pwa.css"
-import { StatusMonitor } from '../pwa-tools/tools/StatusMonitor';
+// import { StatusMonitor } from '../pwa-tools/tools/StatusMonitor';
 import { WebSocketClientService } from '../pwa-tools/tools/WSClientService';
 import { ScheduledTask, TIME_PERIOD } from '../pwa-tools/tools/ScheduledTask';
 import { RovControlInterface } from './RovControlInterface';
@@ -49,7 +49,7 @@ const App = () => {
                     {/* <Route path={"/*"} element={<Entries />} /> */}
                 </Routes>
                 <AppRoutes style={{ position: "absolute" }}>
-                    <StatusMonitor customRouteName={'monitor'} />
+                    {/* <StatusMonitor customRouteName={'monitor'} /> */}
                     <RovControlInterface customRouteName={'rovcontrol'} />
                     <Wrapper customRouteName={'update'} />
                 </AppRoutes>
